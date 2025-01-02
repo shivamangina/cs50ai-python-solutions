@@ -1,6 +1,7 @@
 """
 Tic Tac Toe Player
 """
+# https://cs50.harvard.edu/ai/2024/projects/0/tictactoe/
 
 import math
 import copy
