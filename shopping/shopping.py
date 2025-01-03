@@ -17,20 +17,18 @@ def main():
 
     # Load data from spreadsheet and split into train and test sets
     evidence, labels = load_data(sys.argv[1])
-    X_train, X_test, y_train, y_test = train_test_split(
-        evidence, labels, test_size=TEST_SIZE
-    )
+    X_train, X_test, y_train, y_test = train_test_split(evidence, labels, test_size=TEST_SIZE)
 
     # Train model and make predictions
     model = train_model(X_train, y_train)
-    # predictions = model.predict(X_test)
-    # sensitivity, specificity = evaluate(y_test, predictions)
+    predictions = model.predict(X_test)
+    sensitivity, specificity = evaluate(y_test, predictions)
 
     # Print results
-    # print(f"Correct: {(y_test == predictions).sum()}")
-    # print(f"Incorrect: {(y_test != predictions).sum()}")
-    # print(f"True Positive Rate: {100 * sensitivity:.2f}%")
-    # print(f"True Negative Rate: {100 * specificity:.2f}%")
+    print(f"Correct: {(y_test == predictions).sum()}")
+    print(f"Incorrect: {(y_test != predictions).sum()}")
+    print(f"True Positive Rate: {100 * sensitivity:.2f}%")
+    print(f"True Negative Rate: {100 * specificity:.2f}%")
 
 
 def load_data(filename):
@@ -61,16 +59,22 @@ def load_data(filename):
     labels should be the corresponding list of labels, where each label
     is 1 if Revenue is true, and 0 otherwise.
     """
-    
     data = pd.read_csv(filename)
-    evidence = data.values.tolist()
-    labels = data.columns.tolist()
+    
+    # Convert Month to numerical values
+    month_mapping = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'June': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    }
+    data['Month'] = data['Month'].map(month_mapping)
+    data['VisitorType'] = data['VisitorType'].apply(lambda x: 1 if x == 'Returning_Visitor' else 0)
+    data['Weekend'] = data['Weekend'].apply(lambda x: 1 if x else 0)
+    data['Revenue'] = data['Revenue'].apply(lambda x: 1 if x else 0)
+    
+    evidence = data.drop(columns=['Revenue'])
+    labels = data['Revenue']
     
     return (evidence, labels)
-
-    
-    
-    
 
 
 def train_model(evidence, labels):
@@ -78,7 +82,9 @@ def train_model(evidence, labels):
     Given a list of evidence lists and a list of labels, return a
     fitted k-nearest neighbor model (k=1) trained on the data.
     """
-    raise NotImplementedError
+    model = KNeighborsClassifier(n_neighbors=1)
+    model.fit(evidence,labels)
+    return model
 
 
 def evaluate(labels, predictions):
@@ -96,7 +102,32 @@ def evaluate(labels, predictions):
     representing the "true negative rate": the proportion of
     actual negative labels that were accurately identified.
     """
-    raise NotImplementedError
+    truePositive = 0
+    falsePositive = 0
+    
+    trueNegative = 0
+    falseNegative = 0
+    
+    for index,label in enumerate(labels):
+        if label == 1:
+            if label == predictions[index]:
+                truePositive+= 1
+            else:
+                falsePositive+= 1
+        
+        if label == 0:
+            if label == predictions[index]:
+                trueNegative+= 1
+            else:
+                falseNegative+= 1
+            
+    
+    sensitivity = truePositive/(truePositive+falsePositive)
+    specificity = trueNegative/(trueNegative+falseNegative)
+    
+    
+    
+    return (sensitivity, specificity)
 
 
 if __name__ == "__main__":
